@@ -16,7 +16,7 @@ jobs:
       - name: Use Node.js 22.20.0
         uses: actions/setup-node@v2
         with:
-          node-version: '22.20.0'
+          node-version: "22.20.0"
 
       - name: 🔨 Build Project
         run: |
@@ -29,3 +29,6 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: dist/
+          server-dir: ./
+          dangerous-clean-slate: true
