@@ -1,78 +1,72 @@
 import {
   HomeSectionTitle,
-  HomeSectionTitleSkeleton,
+  SectionTitleSkeleton,
 } from "@/components/common/section-title";
+import { useGetCategoryProductsForHome } from "@/api/queries/useProducts";
 import type { ProductType } from "@/type";
-import { CardLayout } from "@/components/common/card-layout";
+import { slugify } from "@/helper";
 import { ProductCard, ProductCardSkeleton } from "@/components/card/product";
+import { CardLayout } from "@/components/common/card-layout";
 import { useIsMobile, useIsTablet } from "@/hooks/useMobile";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { ArrowDown, ArrowUp } from "lucide-react";
-import { useState } from "react";
 
-interface Props {
-  title: string;
+interface FormatType {
+  categoryId: string;
+  name: string;
+  products: { data: ProductType[] };
+  hasProducts: boolean;
   isLoading: boolean;
-  products: ProductType[] | [];
 }
 
-export const ProductSection = ({ isLoading, products, title }: Props) => {
+export const CategoryProductsSection = () => {
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
-  const [showAll, setShowAll] = useState(false);
-
   const initialLength = isMobile ? 2 : isTablet ? 5 : 6;
-
-  const handleViewAll = () => {
-    setShowAll(true);
-  };
-
-  const handleSeeLess = () => {
-    setShowAll(false);
-  };
-
-  const displayedProducts = showAll
-    ? products
-    : products?.slice(0, initialLength);
-
-  if (!products || products?.length === initialLength) return null;
-
-  if (isLoading)
-    return (
-      <div className="w-full">
-        <div className="my-6">
-          <HomeSectionTitleSkeleton />
-        </div>
-
-        <CardLayout>
-          {Array.from({ length: 6 }).map((_, i) => (
-            <ProductCardSkeleton key={i} />
-          ))}
-        </CardLayout>
-      </div>
-    );
+  const { data, isLoading } = useGetCategoryProductsForHome();
+  const formatted = (data?.data as FormatType[]) || [];
 
   return (
-    <HomeSectionTitle title={title}>
-      <CardLayout>
-        {displayedProducts?.map((product) => (
-          <ProductCard key={product?.id} product={product} />
-        ))}
-      </CardLayout>
-      <div className="flex justify-center items-center mt-4">
-        {!showAll && products && products?.length > initialLength ? (
-          <Button onClick={handleViewAll} className={cn("rounded-none")}>
-            View All
-            <ArrowDown className="w-6 h-6 font-bold group-hover:translate-x-1 transition-transform" />
-          </Button>
-        ) : showAll && products && products?.length > initialLength ? (
-          <Button onClick={handleSeeLess} className={cn("rounded-none")}>
-            See Less
-            <ArrowUp className="w-6 h-6 font-bold group-hover:-translate-x-1 transition-transform" />
-          </Button>
-        ) : null}
-      </div>
-    </HomeSectionTitle>
+    <>
+      {isLoading ? (
+        <>
+          {Array.from({ length: 3 }).map((_, i) => (
+            <section key={i} className="mb-10 md:mb-20">
+              <SectionTitleSkeleton />
+              <div className="w-full">
+                <CardLayout>
+                  {Array.from({ length: initialLength }).map((_, i) => (
+                    <ProductCardSkeleton key={i} />
+                  ))}
+                </CardLayout>
+              </div>
+            </section>
+          ))}
+        </>
+      ) : (
+        formatted?.length > 0 &&
+        formatted?.map((category) => {
+          const hasProducts =
+            category?.products && category?.products?.data?.length > 0;
+          return hasProducts ? (
+            <section key={category?.categoryId}>
+              <HomeSectionTitle
+                title={category?.name}
+                href={`/categories/${category?.categoryId}/${slugify(
+                  category?.name
+                )}`}>
+                <CardLayout>
+                  {category?.products &&
+                    category?.products?.data?.length > 0 &&
+                    category?.products?.data
+                      ?.slice(0, initialLength)
+                      ?.map((product) => (
+                        <ProductCard key={product?.id} product={product} />
+                      ))}
+                </CardLayout>
+              </HomeSectionTitle>
+            </section>
+          ) : null;
+        })
+      )}
+    </>
   );
 };
